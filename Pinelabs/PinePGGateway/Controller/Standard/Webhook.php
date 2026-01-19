@@ -18,6 +18,8 @@ class Webhook extends Action implements CsrfAwareActionInterface
     protected $resultJsonFactory;
     protected $orderFactory;
     protected $scopeConfig;
+    protected $storeManager;
+    protected $paymentMethod;
 
     /** @var Logger */
     protected $_logger;
@@ -33,6 +35,7 @@ class Webhook extends Action implements CsrfAwareActionInterface
         $this->orderFactory     = $om->get(OrderFactory::class);
         $this->scopeConfig      = $om->get(ScopeConfigInterface::class);
         $this->_logger          = $om->get(Logger::class);
+        $this->storeManager     = $om->get(\Magento\Store\Model\StoreManagerInterface::class);
     }
 
     /* ================= CSRF BYPASS ================= */
@@ -64,13 +67,6 @@ class Webhook extends Action implements CsrfAwareActionInterface
                 'body'    => $rawBody
             ]);
 
-            // 🔐 Signature verification
-            if (!$this->verifySignature($headers, $rawBody)) {
-                $this->_logger->error('Invalid PinePG webhook signature');
-                return $result->setHttpResponseCode(401)
-                    ->setData(['error' => 'Invalid signature']);
-            }
-
             $payload = json_decode($rawBody, true);
 
             if (
@@ -91,6 +87,7 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
             $pineOrderId = $payload['data']['order_id'];
 
+            // Load order using Pine order ID
             $order = $this->orderFactory
                 ->create()
                 ->load($pineOrderId, 'plural_order_id');
@@ -99,14 +96,24 @@ class Webhook extends Action implements CsrfAwareActionInterface
                 throw new \Exception('Order not found for Pine order id: ' . $pineOrderId);
             }
 
+            // ✅ Get store ID from order
+            $storeId = $order->getStoreId();
+            
+            // 🔐 Signature verification WITH STORE SCOPE
+            if (!$this->verifySignature($headers, $rawBody, $storeId)) {
+                $this->_logger->error('Invalid PinePG webhook signature for store: ' . $storeId);
+                return $result->setHttpResponseCode(401)
+                    ->setData(['error' => 'Invalid signature']);
+            }
+
             // 🛑 Idempotency
             if ($order->getState() === \Magento\Sales\Model\Order::STATE_PROCESSING) {
                 return $result->setData(['message' => 'Order already processed']);
             }
 
              // ✅ MARK ORDER AS PAID WITH AUTO-INVOICE (same as Response.php)
-                $payment = $order->getPayment();
-                $payment->registerCaptureNotification($order->getGrandTotal());
+            $payment = $order->getPayment();
+            $payment->registerCaptureNotification($order->getGrandTotal());
 
             // ✅ Mark order paid
             $order->setState(\Magento\Sales\Model\Order::STATE_PROCESSING)
@@ -120,7 +127,8 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
             $this->_logger->info('Webhook processed successfully', [
                 'order_id' => $pineOrderId,
-                'entity_id' => $order->getId()
+                'entity_id' => $order->getId(),
+                'store_id' => $storeId
             ]);
 
             return $result->setData(['message' => 'Webhook processed successfully']);
@@ -135,71 +143,77 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
     /* ================= SIGNATURE VERIFICATION ================= */
 
-    private function verifySignature(array $headers, string $rawBody): bool
-{
-    $headers = array_change_key_case($headers, CASE_LOWER);
+    private function verifySignature(array $headers, string $rawBody, int $storeId = null): bool
+    {
+        $headers = array_change_key_case($headers, CASE_LOWER);
 
-    $webhookId = $headers['webhook-id'] ?? '';
-    $timestamp = $headers['webhook-timestamp'] ?? '';
-    $signature = $headers['webhook-signature'] ?? '';
+        $webhookId = $headers['webhook-id'] ?? '';
+        $timestamp = $headers['webhook-timestamp'] ?? '';
+        $signature = $headers['webhook-signature'] ?? '';
 
-    if (!$webhookId || !$timestamp || !$signature) {
-        $this->_logger->error('Missing webhook signature headers', [
-            'webhook_id' => $webhookId,
-            'timestamp' => $timestamp,
-            'signature' => $signature
-        ]);
-        return false;
+        if (!$webhookId || !$timestamp || !$signature) {
+            $this->_logger->error('Missing webhook signature headers', [
+                'webhook_id' => $webhookId,
+                'timestamp' => $timestamp,
+                'signature' => $signature,
+                'store_id' => $storeId
+            ]);
+            return false;
+        }
+
+        // ⏱ Replay attack protection (5 minutes)
+        if (abs(time() - (int)$timestamp) > 300) {
+            $this->_logger->error('Webhook timestamp expired', [
+                'timestamp' => $timestamp,
+                'store_id' => $storeId
+            ]);
+            return false;
+        }
+
+        // Get payment method with store scope
+        $paymentMethod = \Magento\Framework\App\ObjectManager::getInstance()
+            ->get(\Pinelabs\PinePGGateway\Model\PinePGPaymentMethod::class);
+
+        // ✅ Get secret key with store scope
+        $secret = $paymentMethod->getConfigData('MerchantSecretKey', $storeId);
+
+        if (!$secret) {
+            $this->_logger->error('Webhook secret missing in config for store: ' . $storeId);
+            return false;
+        }
+
+        // 🔑 IMPORTANT: The secret needs to be base64 encoded first
+        $base64Secret = base64_encode($secret);
+        $secretBytes = base64_decode($base64Secret);
+        
+        if ($secretBytes === false) {
+            $this->_logger->error('Failed to base64 decode the secret key for store: ' . $storeId);
+            return false;
+        }
+
+        // ✅ Pine Labs format: webhook-id.timestamp.body
+        $signedPayload = $webhookId . '.' . $timestamp . '.' . $rawBody;
+
+        $expectedSignature = base64_encode(
+            hash_hmac('sha256', $signedPayload, $secretBytes, true)
+        );
+
+        // Header format: v1,XXXX
+        $receivedSignature = str_replace('v1,', '', $signature);
+
+        if (!hash_equals($expectedSignature, $receivedSignature)) {
+            $this->_logger->error('Webhook signature mismatch for store: ' . $storeId, [
+                'expected' => $expectedSignature,
+                'received' => $receivedSignature,
+                'signed_payload_length' => strlen($signedPayload),
+                'raw_body_length' => strlen($rawBody),
+                'store_id' => $storeId
+            ]);
+            return false;
+        }
+
+        return true;
     }
-
-    // ⏱ Replay attack protection (5 minutes)
-    if (abs(time() - (int)$timestamp) > 300) {
-        $this->_logger->error('Webhook timestamp expired', ['timestamp' => $timestamp]);
-        return false;
-    }
-
-    $paymentMethod = \Magento\Framework\App\ObjectManager::getInstance()
-        ->get(\Pinelabs\PinePGGateway\Model\PinePGPaymentMethod::class);
-
-    $secret = $paymentMethod->getConfigData('MerchantSecretKey');
-
-    if (!$secret) {
-        $this->_logger->error('Webhook secret missing in config');
-        return false;
-    }
-
-    // 🔑 IMPORTANT: The secret needs to be base64 encoded first
-    $base64Secret = base64_encode($secret);
-    $secretBytes = base64_decode($base64Secret);
-    
-    if ($secretBytes === false) {
-        $this->_logger->error('Failed to base64 decode the secret key');
-        return false;
-    }
-
-    // ✅ Pine Labs format: webhook-id.timestamp.body
-    $signedPayload = $webhookId . '.' . $timestamp . '.' . $rawBody;
-
-    $expectedSignature = base64_encode(
-        hash_hmac('sha256', $signedPayload, $secretBytes, true)
-    );
-
-    // Header format: v1,XXXX
-    $receivedSignature = str_replace('v1,', '', $signature);
-
-    if (!hash_equals($expectedSignature, $receivedSignature)) {
-        $this->_logger->error('Webhook signature mismatch', [
-            'expected' => $expectedSignature,
-            'received' => $receivedSignature,
-            'signed_payload_length' => strlen($signedPayload),
-            'raw_body_length' => strlen($rawBody)
-        ]);
-        return false;
-    }
-
-    return true;
-}
-
 
     /* ================= HEADER FETCH ================= */
 
