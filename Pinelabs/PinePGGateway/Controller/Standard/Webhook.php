@@ -125,6 +125,17 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
             $order->save();
 
+            // ✅ SEND ORDER CONFIRMATION EMAIL (ADD THIS PART)
+            try {
+                $orderSender = \Magento\Framework\App\ObjectManager::getInstance()
+                    ->get(\Magento\Sales\Model\Order\Email\Sender\OrderSender::class);
+                $orderSender->send($order);
+                $this->_logger->info('Order confirmation email sent successfully for order: ' . $pineOrderId);
+            } catch (\Exception $e) {
+                $this->_logger->error('Error sending order confirmation email: ' . $e->getMessage());
+            }
+            // ✅ END EMAIL SENDING
+
             $this->_logger->info('Webhook processed successfully', [
                 'order_id' => $pineOrderId,
                 'entity_id' => $order->getId(),
