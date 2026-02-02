@@ -239,7 +239,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 
     // Final Payload
     $payload = [
-        'merchant_order_reference' => $order->getIncrementId() . '_' . date("ymdHis"),
+        'merchant_order_reference' => $order->getIncrementId(),
         'order_amount' => [
             'value' => $grandTotal,
             'currency' => 'INR',
