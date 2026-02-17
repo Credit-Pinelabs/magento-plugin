@@ -1,0 +1,200 @@
+<?php
+/**
+ * EMI Widget Template for Product Detail Page
+ */
+$writer = new \Zend_Log_Writer_Stream(BP . '/var/log/emi_widget_template.log');
+$logger = new \Zend_Log();
+$logger->addWriter($writer);
+$logger->info('EMI Widget Template: Starting render');
+
+if ($block->canDisplay()) {
+    $logger->info('EMI Widget Template: canDisplay returned true');
+    $noCostOffers = $block->getNoCostOffers();
+    $allOffers = $block->getAllOffers();
+    $minOffer = $block->getMinimumNoCostOffer();
+    
+    // Debug: Log minOffer data
+    if (!empty($minOffer)) {
+        $logger->info('EMI Widget Template: Min offer data', [
+            'issuer_name' => $minOffer['issuer_name'] ?? 'N/A',
+            'has_logo' => isset($minOffer['logo']) ? 'yes' : 'no',
+            'logo_value' => $minOffer['logo'] ?? 'null',
+            'all_keys' => implode(', ', array_keys($minOffer))
+        ]);
+    }
+    
+    // Debug: Log first issuer data
+    if (!empty($allOffers)) {
+        $firstIssuer = $allOffers[0];
+        $logger->info('EMI Widget Template: First issuer data', [
+            'issuer_name' => $firstIssuer['issuer_name'] ?? 'N/A',
+            'has_logo' => isset($firstIssuer['logo']) ? 'yes' : 'no',
+            'logo_value' => $firstIssuer['logo'] ?? 'null',
+            'all_keys' => implode(', ', array_keys($firstIssuer))
+        ]);
+    }
+    
+    $logger->info('EMI Widget Template: Data fetched', [
+        'noCostOffers_count' => count($noCostOffers),
+        'allOffers_count' => count($allOffers),
+        'has_minOffer' => $minOffer ? 'yes' : 'no'
+    ]);
+} else {
+    $logger->info('EMI Widget Template: canDisplay returned false');
+    return;
+}
+?>
+    
+    <?php if (!empty($minOffer) || !empty($allOffers)): ?>
+        <div class="pinelabs-emi-widget" id="pinelabs-emi-widget">
+            
+            <!-- Minimum No-Cost EMI Display with Pinelabs Logo -->
+            <?php if (!empty($minOffer)): ?>
+                <!-- Debug: <?php echo 'Has logo: ' . (isset($minOffer['logo']) ? 'YES - ' . $minOffer['logo'] : 'NO'); ?> | Bank: <?php echo $minOffer['issuer_name'] ?? 'N/A'; ?> -->
+                <div class="emi-widget-header">
+                    <div class="emi-header-content">
+                        <div class="pinelabs-branding">
+                            <span class="powered-by-text">Powered by</span>
+                            <img src="https://www.pinelabs.com/img/logo.png" alt="Pinelabs" class="pinelabs-logo" />
+                        </div>
+                        <div class="emi-info">
+                            <span class="emi-badge">No Cost EMI</span>
+                            <div class="emi-bank-info">
+                                <?php if (!empty($minOffer['logo'])): ?>
+                                    <img src="<?php echo $block->getViewFileUrl('Pinelabs_PinePGGateway::images/banks/' . $minOffer['logo']); ?>" 
+                                         alt="<?php echo $block->escapeHtml($minOffer['issuer_name']); ?>" 
+                                         class="bank-logo-main" 
+                                         onerror="this.style.display='none';" />
+                                <?php endif; ?>
+                                <span class="bank-name-main"><?php echo $block->escapeHtml($minOffer['issuer_name']); ?></span>
+                            </div>
+                            <span class="emi-amount">Starting ₹<?php echo $block->formatAmount($minOffer['monthly_emi']); ?>/month</span>
+                        </div>
+                    </div>
+                    <button type="button" class="emi-show-all-btn" id="emi-show-all-btn">
+                        View All EMI Options
+                    </button>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- EMI Modal Popup -->
+        <div class="emi-modal" id="emi-modal" style="display: none;">
+            <div class="emi-modal-overlay" id="emi-modal-overlay"></div>
+            <div class="emi-modal-container">
+                <div class="emi-modal-header">
+                    <div class="emi-modal-title">
+                        <img src="https://www.pinelabs.com/img/logo.png" alt="Pinelabs" class="pinelabs-logo-modal" />
+                        <h2>EMI Payment Options</h2>
+                    </div>
+                    <button type="button" class="emi-modal-close" id="emi-modal-close">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="emi-modal-body">
+                    <!-- No-Cost EMI Section -->
+                    <?php if (!empty($noCostOffers)): ?>
+                        <div class="emi-section">
+                            <h3 class="emi-section-title">
+                                <span class="no-cost-badge">No Cost EMI</span>
+                            </h3>
+                            <div class="emi-offers-grid">
+                                <?php foreach ($noCostOffers as $offer): ?>
+                                    <div class="emi-offer-card no-cost">
+                                        <div class="emi-card-header">
+                                            <?php if (!empty($offer['logo'])): ?>
+                                                <img src="<?php echo $block->getViewFileUrl('Pinelabs_PinePGGateway::images/banks/' . $offer['logo']); ?>" 
+                                                     alt="<?php echo $block->escapeHtml($offer['issuer_name']); ?>" 
+                                                     class="bank-logo-card" 
+                                                     onerror="this.style.display='none';" />
+                                            <?php endif; ?>
+                                            <div class="bank-name"><?php echo $block->escapeHtml($offer['issuer_name']); ?></div>
+                                        </div>
+                                        <div class="emi-card-body">
+                                            <div class="emi-monthly">
+                                                <span class="amount">₹<?php echo $block->formatAmount($offer['monthly_emi']); ?></span>
+                                                <span class="period">/month</span>
+                                            </div>
+                                            <div class="emi-tenure-info"><?php echo $offer['tenure_months']; ?> months</div>
+                                            <?php if ($offer['interest_rate'] > 0): ?>
+                                                <div class="emi-interest-rate">Interest: <?php echo number_format($offer['interest_rate'], 1); ?>%</div>
+                                            <?php endif; ?>
+                                            <?php if ($offer['interest_amount'] > 0): ?>
+                                                <div class="emi-interest-rate">Interest Amt: ₹<?php echo $block->formatAmount($offer['interest_amount']); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- All EMI Options by Bank -->
+                    <?php if (!empty($allOffers)): ?>
+                        <div class="emi-section">
+                            <h3 class="emi-section-title">All EMI Options</h3>
+                            <?php foreach ($allOffers as $issuer): ?>
+                                <div class="emi-issuer-group">
+                                    <h4 class="emi-issuer-title">
+                                        <?php if (!empty($issuer['logo'])): ?>
+                                            <img src="<?php echo $block->getViewFileUrl('Pinelabs_PinePGGateway::images/banks/' . $issuer['logo']); ?>" 
+                                                 alt="<?php echo $block->escapeHtml($issuer['issuer_name']); ?>" 
+                                                 class="bank-logo-img" 
+                                                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+                                        <?php endif; ?>
+                                        <span class="bank-name-text"><?php echo $block->escapeHtml($issuer['issuer_name']); ?></span>
+                                    </h4>
+                                    <div class="emi-tenure-list">
+                                        <?php foreach ($issuer['tenures'] as $tenure): ?>
+                                            <div class="emi-tenure-item <?php echo $tenure['emi_type'] === 'NO_COST' ? 'no-cost' : ''; ?>">
+                                                <div class="tenure-details">
+                                                    <div class="tenure-header">
+                                                        <span class="tenure-months"><?php echo $tenure['tenure_months']; ?> months</span>
+                                                        <?php if ($tenure['emi_type'] === 'NO_COST'): ?>
+                                                            <span class="tenure-badge no-cost">No Cost</span>
+                                                        <?php elseif ($tenure['emi_type'] === 'LOW_COST'): ?>
+                                                            <span class="tenure-badge low-cost">Low Cost</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="tenure-info-details">
+                                                        <?php if ($tenure['interest_rate'] > 0): ?>
+                                                            <span class="tenure-detail-item">Interest: <?php echo number_format($tenure['interest_rate'], 1); ?>%</span>
+                                                        <?php endif; ?>
+                                                        <?php if ($tenure['interest_amount'] > 0): ?>
+                                                            <span class="tenure-detail-item">Interest Amt: ₹<?php echo $block->formatAmount($tenure['interest_amount']); ?></span>
+                                                        <?php endif; ?>
+                                                        <?php if ($tenure['processing_fee'] > 0): ?>
+                                                            <span class="tenure-detail-item">Processing Fee: ₹<?php echo $block->formatAmount($tenure['processing_fee']); ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <div class="tenure-amount">
+                                                    <span class="monthly">₹<?php echo $block->formatAmount($tenure['monthly_emi']); ?>/mo</span>
+                                                    <span class="total-amount">Total: ₹<?php echo $block->formatAmount($tenure['total_amount']); ?></span>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/x-magento-init">
+        {
+            "#pinelabs-emi-widget": {
+                "Pinelabs_PinePGGateway/js/emi-widget": {
+                    "noCostOffers": <?php echo $block->getNoCostOffersJson(); ?>,
+                    "allOffers": <?php echo $block->getEmiOffersJson(); ?>
+                }
+            }
+        }
+        </script>
+    <?php endif; ?>

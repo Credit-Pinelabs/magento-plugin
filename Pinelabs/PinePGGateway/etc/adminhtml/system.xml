@@ -47,6 +47,12 @@
                   <source_model>Pinelabs\PinePGGateway\Model\Config\Source\Order\Status\PaymentEnvironment</source_model>
                 </field>
 				
+                <!-- EMI Widget Settings -->
+                <field id="emi_widget_enabled" translate="label" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable EMI Widget on Product Page</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Display EMI offers widget below Add to Cart button on product detail page. Product SKU will be used automatically.</comment>
+                </field>
                 
             </group>
             <!-- payment-group -->

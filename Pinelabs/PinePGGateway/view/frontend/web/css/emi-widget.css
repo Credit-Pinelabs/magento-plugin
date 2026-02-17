@@ -1,0 +1,76 @@
+/* Pinelabs EMI Widget - Modal Design */
+.pinelabs-emi-widget { margin: 20px 0; padding: 16px 20px; background: #003434; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 52, 52, 0.3); }
+.emi-widget-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; min-height: 60px; }
+.emi-header-content { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.pinelabs-branding { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.powered-by-text { color: rgba(255, 255, 255, 0.7); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+.pinelabs-logo { height: 22px; width: auto; background: white; padding: 4px 8px; border-radius: 6px; }
+.emi-info { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.emi-bank-info { display: flex; align-items: center; gap: 8px; }
+.bank-logo-main { height: 20px; width: auto; max-width: 80px; object-fit: contain; flex-shrink: 0; }
+.bank-name-main { color: white; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.emi-badge { display: inline-block; background: #4CAF50; color: white; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.emi-amount { color: white; font-size: 18px; font-weight: 700; }
+.emi-show-all-btn { background: white; color: #003434; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; white-space: nowrap; flex-shrink: 0; }
+.emi-show-all-btn:hover { background: #f0f0f0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+.emi-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; display: none; }
+body.emi-modal-open .emi-modal { display: block !important; }
+.emi-modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
+.emi-modal-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 900px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; }
+.emi-modal-header { padding: 24px 30px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; background: #003434; color: #fff; border-radius: 16px 16px 0 0; }
+.emi-modal-title { display: flex; align-items: center; gap: 15px; flex: 1; }
+.pinelabs-logo-modal { height: 35px; width: auto; background: white; padding: 6px 12px; border-radius: 6px; }
+.emi-modal-title h2 { margin: 0; font-size: 24px; font-weight: 700; color: white; }
+.emi-modal-close { background: rgba(255, 255, 255, 0.2); border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: white; }
+.emi-modal-close:hover { background: rgba(255, 255, 255, 0.3); transform: rotate(90deg); }
+.emi-modal-body { padding: 30px; overflow-y: auto; flex: 1; }
+.emi-section { margin-bottom: 30px; }
+.emi-section:last-child { margin-bottom: 0; }
+.emi-section-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.no-cost-badge { background: #4CAF50; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.emi-offers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.emi-offer-card { background: white; border: 2px solid #e0e0e0; border-radius: 12px; padding: 16px; transition: all 0.3s ease; cursor: pointer; }
+.emi-offer-card:hover { border-color: #667eea; box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2); transform: translateY(-4px); }
+.emi-offer-card.no-cost { border-color: #4CAF50; background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%); }
+.emi-card-header { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 12px; }
+.emi-card-header .bank-name { font-size: 14px; font-weight: 600; color: #333; }
+.bank-logo-card { height: 24px; width: auto; max-width: 100px; object-fit: contain; }
+.emi-card-body { text-align: center; }
+.emi-monthly { margin-bottom: 8px; }
+.emi-monthly .amount { font-size: 24px; font-weight: 700; color: #667eea; }
+.emi-monthly .period { font-size: 14px; color: #666; }
+.emi-tenure-info { font-size: 13px; color: #666; font-weight: 500; margin-bottom: 4px; }
+.emi-interest-rate { font-size: 11px; color: #888; }
+.emi-issuer-group { margin-bottom: 24px; padding: 20px; background: #f8f9fa; border-radius: 12px; }
+.emi-issuer-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0; display: flex; align-items: center; gap: 12px; }
+.bank-logo-img { height: 28px; width: auto; max-width: 120px; object-fit: contain; }
+.bank-name-text { display: inline; }
+.emi-tenure-list { display: flex; flex-direction: column; gap: 12px; }
+.emi-tenure-item { background: white; padding: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e0e0e0; transition: all 0.3s ease; }
+.emi-tenure-item:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15); }
+.emi-tenure-item.no-cost { background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%); border-color: #4CAF50; }
+.tenure-details { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.tenure-header { display: flex; align-items: center; gap: 10px; }
+.tenure-months { font-size: 15px; font-weight: 600; color: #333; }
+.tenure-badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.tenure-badge.no-cost { background: #4CAF50; color: white; }
+.tenure-badge.low-cost { background: #FF9800; color: white; }
+.tenure-info-details { display: flex; flex-wrap: wrap; gap: 8px; }
+.tenure-detail-item { font-size: 11px; color: #666; background: #f5f5f5; padding: 3px 8px; border-radius: 4px; }
+.tenure-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.tenure-amount .monthly { font-size: 18px; font-weight: 700; color: #667eea; }
+.tenure-amount .total-amount { font-size: 11px; color: #888; }
+.tenure-amount .monthly { font-size: 18px; font-weight: 700; color: #667eea; }
+@media (max-width: 768px) {
+    .emi-modal-container { width: 95%; max-height: 90vh; }
+    .emi-widget-header { flex-direction: column; align-items: stretch; gap: 12px; }
+    .emi-header-content { width: 100%; }
+    .emi-show-all-btn { width: 100%; margin-left: 0; }
+    .emi-offers-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .emi-modal-title h2 { font-size: 18px; }
+    .emi-modal-header { padding: 16px 20px; }
+    .emi-modal-body { padding: 20px; }
+    .tenure-details { flex-direction: column; align-items: flex-start; }
+    .bank-name-main { font-size: 12px; }
+    .emi-amount { font-size: 16px; }
+}
