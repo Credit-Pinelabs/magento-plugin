@@ -241,7 +241,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         ],
         'callback_url' => $callback_url,
         'pre_auth' => false,
-        'integration_mode' => "REDIRECT",
+        'integration_mode' => $this->getConfigData('IntegrationMode') ?: 'REDIRECT',
         "plugin_data" => [
             "plugin_type" => "Magento",
             "plugin_version" => "V3"
@@ -295,7 +295,10 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         if (isset($response['redirect_url']) && $response['response_code'] === 200) {
             $order->setData('plural_order_id', $response['order_id']);
             $this->orderRepository->save($order);
-            return $response['redirect_url'];
+            return [
+                'redirect_url' => $response['redirect_url'],
+                'order_id' => $response['order_id'],
+            ];
         } else {
             $this->pineLogger->info(__LINE__ . ' | ' . __FUNCTION__ . ' API failure: ' . json_encode($response));
             throw new \Exception($response['error_message'] ?? ($response['response_message'] ?? 'Unknown error'));

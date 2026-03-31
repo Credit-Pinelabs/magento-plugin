@@ -41,3 +41,108 @@
         </div>
     </div>
 </div>
+
+<!-- ── Pine Labs Iframe Loader Overlay ─────────────────────────────── -->
+<div id="pinepg-loader" class="pinepg-loader" style="display:none;">
+    <div class="pinepg-spinner"></div>
+    <div id="pinepg-loading-text" class="pinepg-loading-text">Processing payment...</div>
+</div>
+
+<!-- ── Pine Labs Payment Status Overlay ────────────────────────────── -->
+<div id="pinepg-payment-status" class="pinepg-payment-status" style="display:none;">
+    <div id="pinepg-status-icon" class="pinepg-status-icon"></div>
+    <div id="pinepg-status-message" class="pinepg-status-message"></div>
+    <div id="pinepg-status-buttons" class="pinepg-status-buttons"></div>
+</div>
+
+<!-- ── Pine Labs Iframe Styles ─────────────────────────────────────── -->
+<style>
+    .pinepg-loader {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(255,255,255,0.95);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 99999;
+    }
+    .pinepg-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 50px; height: 50px;
+        animation: pinepg-spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    .pinepg-loading-text {
+        font-size: 16px;
+        color: #333;
+        font-weight: bold;
+    }
+    @keyframes pinepg-spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .pinepg-payment-status {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        z-index: 100000;
+        min-width: 300px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .pinepg-success {
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #c3e6cb;
+    }
+    .pinepg-failure {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
+    }
+    .pinepg-status-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+    .pinepg-status-message {
+        font-size: 18px;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    .pinepg-status-button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 5px;
+        transition: all 0.3s ease;
+    }
+    .pinepg-continue-btn {
+        background: #28a745;
+        color: white;
+    }
+    .pinepg-continue-btn:hover {
+        background: #218838;
+    }
+    .pinepg-retry-btn {
+        background: #007bff;
+        color: white;
+    }
+    .pinepg-retry-btn:hover {
+        background: #0056b3;
+    }
+    .pinepg-cart-btn {
+        background: #6c757d;
+        color: white;
+    }
+    .pinepg-cart-btn:hover {
+        background: #545b62;
+    }
+</style>

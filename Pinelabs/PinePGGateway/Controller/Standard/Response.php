@@ -57,11 +57,15 @@ class Response extends \Pinelabs\PinePGGateway\Controller\PinePGAbstract
         $resultRedirect = $this->resultRedirectFactory->create();
         $orderId = null;
 
+        // Detect if this is an iframe callback (AJAX POST with source=iframe)
+        $isIframe = ($this->getRequest()->getParam('source') === 'iframe');
+
         try {
             $callbackData = $this->getRequest()->getPostValue();
 
             // Log the callback data for debugging
             $this->_logger->info('PinePG callback data: ' . json_encode($callbackData));
+            $this->_logger->info('Callback source: ' . ($isIframe ? 'iframe' : 'redirect'));
 
             if (!isset($callbackData['order_id'])) {
                 $this->_logger->error('No order_id received in callback data.'. json_encode($callbackData));
@@ -70,13 +74,16 @@ class Response extends \Pinelabs\PinePGGateway\Controller\PinePGAbstract
                 $this->restoreCustomerAndCart();
                 $this->checkoutSession->restoreQuote();
                 
+                if ($isIframe) {
+                    return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => 'No order ID received']);
+                }
                 $resultRedirect->setPath('checkout/onepage/failure');
                 return $resultRedirect;
             }
 
             $paymentMethod = $this->getPaymentMethod();
             $orderId = $callbackData['order_id'];
-            $statusEnquiry = $callbackData['status'];
+            $statusEnquiry = $callbackData['status'] ?? null;
             $maxRetries = 3;
             $retryDelay = 20; // in seconds
 
@@ -100,15 +107,18 @@ if ($statusEnquiry === 'CANCELLED') {
     } else {
         $this->_logger->error("Order cannot be cancelled. Current state: " . $order->getState());
     }
- 
+
     // Restore session & cart
     $this->restoreCustomerAndCart($orderId);
     $this->checkoutSession->restoreQuote();
- 
+
+    if ($isIframe) {
+        return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => 'Payment cancelled']);
+    }
     $resultRedirect->setPath('checkout/onepage/failure');
     return $resultRedirect;
 }
- 
+
 // ✅ HANDLE CANCELLED ORDER
  
             
@@ -140,6 +150,9 @@ if ($statusEnquiry === 'CANCELLED') {
                 $this->restoreCustomerAndCart($orderId);
                 $this->checkoutSession->restoreQuote();
                 
+                if ($isIframe) {
+                    return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => 'Payment not processed']);
+                }
                 $resultRedirect->setPath('checkout/onepage/failure');
                 return $resultRedirect;
             }
@@ -157,6 +170,9 @@ if ($statusEnquiry === 'CANCELLED') {
                 $this->restoreCustomerAndCart($orderId);
                 $this->checkoutSession->restoreQuote();
                 
+                if ($isIframe) {
+                    return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => 'Order not found']);
+                }
                 $resultRedirect->setPath('checkout/onepage/failure');
                 return $resultRedirect;
             }
@@ -168,6 +184,9 @@ if ($statusEnquiry === 'CANCELLED') {
                 $this->restoreCustomerAndCart($orderId);
                 $this->checkoutSession->restoreQuote();
                 
+                if ($isIframe) {
+                    return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => 'Failed to load order']);
+                }
                 $resultRedirect->setPath('checkout/onepage/failure');
                 return $resultRedirect;
             }
@@ -219,6 +238,11 @@ if ($statusEnquiry === 'CANCELLED') {
                 $this->_logger->critical('Error sending order email: ' . $e->getMessage());
             }
 
+            // Return JSON for iframe, redirect for standard flow
+            if ($isIframe) {
+                return $this->resultJsonFactory->create()->setData(['success' => true, 'message' => 'SUCCESS']);
+            }
+
             $resultRedirect->setPath('checkout/onepage/success');
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             $this->messageManager->addExceptionMessage($e, $e->getMessage());
@@ -228,6 +252,9 @@ if ($statusEnquiry === 'CANCELLED') {
             $this->restoreCustomerAndCart($orderId);
             $this->checkoutSession->restoreQuote();
             
+            if ($isIframe) {
+                return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => $e->getMessage()]);
+            }
             $resultRedirect->setPath('checkout/onepage/failure');
         } catch (\Exception $e) {
             $this->messageManager->addExceptionMessage($e, __('We can\'t place the order.'));
@@ -237,18 +264,15 @@ if ($statusEnquiry === 'CANCELLED') {
             $this->restoreCustomerAndCart($orderId);
             $this->checkoutSession->restoreQuote();
             
+            if ($isIframe) {
+                return $this->resultJsonFactory->create()->setData(['success' => false, 'message' => $e->getMessage()]);
+            }
             $resultRedirect->setPath('checkout/onepage/failure');
         }
 
         return $resultRedirect;
     }
 
-    /**
-     * Restore customer session
-     *
-     * @param \Magento\Sales\Model\Order $order
-     * @return void
-     */
     private function restoreCustomerSession($order)
     {
         try {

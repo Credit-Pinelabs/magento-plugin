@@ -37,7 +37,9 @@ class Redirect extends \Pinelabs\PinePGGateway\Controller\PinePGAbstract {
 
         $params = [];
 		
-		$params["url"] = $this->getPaymentMethod()->callOrderApi($order);
+		$orderApiResult = $this->getPaymentMethod()->callOrderApi($order);
+        $params["url"] = $orderApiResult['redirect_url'];
+        $params["order_id"] = $orderApiResult['order_id'];
         return $this->resultJsonFactory->create()->setData($params);
 		
     }

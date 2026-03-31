@@ -46,8 +46,11 @@
                     <label>Environment</label>
                   <source_model>Pinelabs\PinePGGateway\Model\Config\Source\Order\Status\PaymentEnvironment</source_model>
                 </field>
-				
-                
+			  <field id="IntegrationMode" translate="label" type="select" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Integration Mode</label>
+                    <comment>REDIRECT: Full page redirect to Pine Labs checkout. IFRAME: Embedded checkout within your store.</comment>
+                  <source_model>Pinelabs\PinePGGateway\Model\Config\Source\Order\Status\PaymentIntegrationMode</source_model>
+                </field>
             </group>
             <!-- payment-group -->
         </section>

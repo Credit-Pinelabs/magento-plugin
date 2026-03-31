@@ -17,8 +17,34 @@
                 <value id="magento-connect-prod" type="host">https://pinepg.in/api/PG/V2</value>
             </values>
             <values>
-                <value id="pinelab-connect-prod" type="host">secure.pinepg.in</value>
-                <value id="magento-connect-prod" type="host">https://secure.pinepg.in/payment</value>
+                <value id="pinelab-connect-secure" type="host">secure.pinepg.in</value>
+                <value id="magento-connect-secure" type="host">https://secure.pinepg.in/payment</value>
+            </values>
+            <values>
+                <value id="plural-uat-v2" type="host">pluraluat.v2.pinepg.in</value>
+                <value id="plural-api-prod" type="host">api.pluralpay.in</value>
+            </values>
+        </policy>
+        <policy id="frame-src">
+            <values>
+                <value id="plural-checkout-staging" type="host">checkout-staging.pluralonline.com</value>
+                <value id="plural-checkout-prod" type="host">checkout.pluralonline.com</value>
+                <value id="plural-uat-frame" type="host">pluraluat.v2.pinepg.in</value>
+                <value id="plural-api-frame" type="host">api.pluralpay.in</value>
+            </values>
+        </policy>
+        <policy id="script-src">
+            <values>
+                <value id="plural-sdk-staging" type="host">checkout-staging.pluralonline.com</value>
+                <value id="plural-sdk-prod" type="host">checkout.pluralonline.com</value>
+            </values>
+        </policy>
+        <policy id="connect-src">
+            <values>
+                <value id="plural-uat-api" type="host">pluraluat.v2.pinepg.in</value>
+                <value id="plural-prod-api" type="host">api.pluralpay.in</value>
+                <value id="plural-checkout-staging-api" type="host">checkout-staging.pluralonline.com</value>
+                <value id="plural-checkout-prod-api" type="host">checkout.pluralonline.com</value>
             </values>
         </policy>
     </policies>
