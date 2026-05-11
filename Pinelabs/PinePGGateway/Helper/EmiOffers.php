@@ -123,7 +123,7 @@ class EmiOffers extends AbstractHelper
             );
 
             $offersUrl = ($env == 'LIVE')
-                ? 'https://pluralonline.v2.pinepg.in/api/affordability/v1/offer/discovery'
+                ? 'https://api.pluralpay.in/api/affordability/v1/offer/discovery'
                 : 'https://pluraluat.v2.pinepg.in/api/affordability/v1/offer/discovery';
 
             // Convert amount to paise (multiply by 100)
