@@ -45,12 +45,34 @@ if ($block->canDisplay()) {
 }
 ?>
     
-    <?php if (!empty($minOffer) || !empty($allOffers)): ?>
+    <?php
+        // Fallback: if no no-cost offers, use cheapest standard tenure from first issuer
+        $displayOffer = $minOffer;
+        $displayBadge = 'No Cost EMI';
+        if (empty($displayOffer) && !empty($allOffers)) {
+            $firstIssuer = $allOffers[0];
+            $cheapestTenure = null;
+            foreach ($firstIssuer['tenures'] as $tenure) {
+                if ($tenure['tenure_months'] > 1 && ($cheapestTenure === null || $tenure['monthly_emi'] < $cheapestTenure['monthly_emi'])) {
+                    $cheapestTenure = $tenure;
+                }
+            }
+            if ($cheapestTenure) {
+                $displayOffer = [
+                    'issuer_name'   => $firstIssuer['issuer_name'],
+                    'logo'          => $firstIssuer['logo'],
+                    'monthly_emi'   => $cheapestTenure['monthly_emi'],
+                    'tenure_months' => $cheapestTenure['tenure_months'],
+                ];
+                $displayBadge = 'EMI Available';
+            }
+        }
+    ?>
+    <?php if (!empty($displayOffer) || !empty($allOffers)): ?>
         <div class="pinelabs-emi-widget" id="pinelabs-emi-widget">
             
-            <!-- Minimum No-Cost EMI Display with Pinelabs Logo -->
-            <?php if (!empty($minOffer)): ?>
-                <!-- Debug: <?php echo 'Has logo: ' . (isset($minOffer['logo']) ? 'YES - ' . $minOffer['logo'] : 'NO'); ?> | Bank: <?php echo $minOffer['issuer_name'] ?? 'N/A'; ?> -->
+            <!-- EMI Header -->
+            <?php if (!empty($displayOffer)): ?>
                 <div class="emi-widget-header">
                     <div class="emi-header-content">
                         <div class="pinelabs-branding">
@@ -58,17 +80,17 @@ if ($block->canDisplay()) {
                             <img src="https://www.pinelabs.com/img/logo.png" alt="Pinelabs" class="pinelabs-logo" />
                         </div>
                         <div class="emi-info">
-                            <span class="emi-badge">No Cost EMI</span>
+                            <span class="emi-badge"><?php echo $displayBadge; ?></span>
                             <div class="emi-bank-info">
-                                <?php if (!empty($minOffer['logo'])): ?>
-                                    <img src="<?php echo $block->getViewFileUrl('Pinelabs_PinePGGateway::images/banks/' . $minOffer['logo']); ?>" 
-                                         alt="<?php echo $block->escapeHtml($minOffer['issuer_name']); ?>" 
+                                <?php if (!empty($displayOffer['logo'])): ?>
+                                    <img src="<?php echo $block->getViewFileUrl('Pinelabs_PinePGGateway::images/banks/' . $displayOffer['logo']); ?>" 
+                                         alt="<?php echo $block->escapeHtml($displayOffer['issuer_name']); ?>" 
                                          class="bank-logo-main" 
                                          onerror="this.style.display='none';" />
                                 <?php endif; ?>
-                                <span class="bank-name-main"><?php echo $block->escapeHtml($minOffer['issuer_name']); ?></span>
+                                <span class="bank-name-main"><?php echo $block->escapeHtml($displayOffer['issuer_name']); ?></span>
                             </div>
-                            <span class="emi-amount">Starting ₹<?php echo $block->formatAmount($minOffer['monthly_emi']); ?>/month</span>
+                            <span class="emi-amount">Starting ₹<?php echo $block->formatAmount($displayOffer['monthly_emi']); ?>/month</span>
                         </div>
                     </div>
                     <button type="button" class="emi-show-all-btn" id="emi-show-all-btn">
