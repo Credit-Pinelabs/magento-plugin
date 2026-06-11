@@ -202,6 +202,7 @@ class EmiOffers extends AbstractHelper
                     $noCostOffers[] = [
                         'issuer_name' => $issuer['display_name'] ?? $issuer['name'],
                         'issuer_id' => $issuer['id'],
+                        'issuer_type' => $issuer['issuer_type'] ?? '',
                         'logo' => $this->getBankLogo($issuer['display_name'] ?? $issuer['name']),
                         'tenure_name' => $tenure['name'],
                         'tenure_months' => $tenure['tenure_value'],

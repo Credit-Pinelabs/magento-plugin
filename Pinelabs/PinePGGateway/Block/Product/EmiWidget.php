@@ -181,6 +181,27 @@ class EmiWidget extends Template
     }
 
     /**
+     * Get short label for issuer/card type
+     *
+     * @param string $issuerType
+     * @return string
+     */
+    public function getCardTypeLabel($issuerType)
+    {
+        $map = [
+            'CC_BANK'      => 'CC',
+            'DC_BANK'      => 'DC',
+            'CREDIT_CARD'  => 'CC',
+            'DEBIT_CARD'   => 'DC',
+            'CARDLESS'     => 'Cardless',
+            'PREPAID'      => 'Prepaid',
+            'WALLET'       => 'Wallet',
+            'NET_BANKING'  => 'NB',
+        ];
+        return $map[strtoupper($issuerType)] ?? '';
+    }
+
+    /**
      * Get EMI offers as JSON
      *
      * @return string

@@ -46,21 +46,25 @@ if ($block->canDisplay()) {
 ?>
     
     <?php
-        // Fallback: if no no-cost offers, use cheapest standard tenure from first issuer
+        // Fallback: if no no-cost offers, find the absolute minimum EMI across ALL issuers
         $displayOffer = $minOffer;
         $displayBadge = 'No Cost EMI';
         if (empty($displayOffer) && !empty($allOffers)) {
-            $firstIssuer = $allOffers[0];
             $cheapestTenure = null;
-            foreach ($firstIssuer['tenures'] as $tenure) {
-                if ($tenure['tenure_months'] > 1 && ($cheapestTenure === null || $tenure['monthly_emi'] < $cheapestTenure['monthly_emi'])) {
-                    $cheapestTenure = $tenure;
+            $cheapestIssuer = null;
+            foreach ($allOffers as $issuer) {
+                foreach ($issuer['tenures'] as $tenure) {
+                    if ($tenure['tenure_months'] > 1 && ($cheapestTenure === null || $tenure['monthly_emi'] < $cheapestTenure['monthly_emi'])) {
+                        $cheapestTenure = $tenure;
+                        $cheapestIssuer = $issuer;
+                    }
                 }
             }
-            if ($cheapestTenure) {
+            if ($cheapestTenure && $cheapestIssuer) {
                 $displayOffer = [
-                    'issuer_name'   => $firstIssuer['issuer_name'],
-                    'logo'          => $firstIssuer['logo'],
+                    'issuer_name'   => $cheapestIssuer['issuer_name'],
+                    'issuer_type'   => $cheapestIssuer['issuer_type'] ?? '',
+                    'logo'          => $cheapestIssuer['logo'],
                     'monthly_emi'   => $cheapestTenure['monthly_emi'],
                     'tenure_months' => $cheapestTenure['tenure_months'],
                 ];
@@ -89,6 +93,10 @@ if ($block->canDisplay()) {
                                          onerror="this.style.display='none';" />
                                 <?php endif; ?>
                                 <span class="bank-name-main"><?php echo $block->escapeHtml($displayOffer['issuer_name']); ?></span>
+                                <?php $cardLabel = $block->getCardTypeLabel($displayOffer['issuer_type'] ?? ''); ?>
+                                <?php if ($cardLabel): ?>
+                                    <span class="card-type-badge"><?php echo $cardLabel; ?></span>
+                                <?php endif; ?>
                             </div>
                             <span class="emi-amount">Starting ₹<?php echo $block->formatAmount($displayOffer['monthly_emi']); ?>/month</span>
                         </div>
@@ -169,6 +177,10 @@ if ($block->canDisplay()) {
                                                  onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
                                         <?php endif; ?>
                                         <span class="bank-name-text"><?php echo $block->escapeHtml($issuer['issuer_name']); ?></span>
+                                        <?php $issuerCardLabel = $block->getCardTypeLabel($issuer['issuer_type'] ?? ''); ?>
+                                        <?php if ($issuerCardLabel): ?>
+                                            <span class="card-type-badge"><?php echo $issuerCardLabel; ?></span>
+                                        <?php endif; ?>
                                     </h4>
                                     <div class="emi-tenure-list">
                                         <?php foreach ($issuer['tenures'] as $tenure): ?>
