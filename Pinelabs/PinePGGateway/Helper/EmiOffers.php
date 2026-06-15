@@ -273,7 +273,11 @@ class EmiOffers extends AbstractHelper
                 ];
             }
 
+            // Sort tenures by months in ascending order
             if (!empty($issuerOffers['tenures'])) {
+                usort($issuerOffers['tenures'], function($a, $b) {
+                    return $a['tenure_months'] <=> $b['tenure_months'];
+                });
                 $allOffers[] = $issuerOffers;
             }
         }
