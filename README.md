@@ -19,7 +19,8 @@
 
 # Supported Magento Version
 
- - 2.3.4 , 2.4.2 ,2.4.7
+ - 2.3.4 , 2.4.2 ,2.4.7,2.4.9
+
 
 # Updated Features 
 
