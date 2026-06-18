@@ -3,6 +3,7 @@
 namespace Pinelabs\PinePGGateway\Model;
 
 use Magento\Sales\Api\Data\TransactionInterface;
+use Magento\Payment\Model\InfoInterface;
 use Magento\Framework\Session\Config;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Pinelabs\PinePGGateway\Logger\Logger;
@@ -20,7 +21,9 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
      */
 	const PAYMENT_PINE_PG_CODE = 'pinepgpaymentmethod';
     protected $_code = self::PAYMENT_PINE_PG_CODE;
-    protected $_isOffline = true;
+    protected $_isOffline = false;
+    protected $_canRefund = true;
+    protected $_canRefundInvoicePartial = true;
 	private $checkoutSession;
 	protected  $logger;
 	protected  $pineLogger;
@@ -80,6 +83,53 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 	
 	public function getRedirectUrl() {
         return $this->helper->getUrl($this->getConfigData('redirect_url'));
+    }
+
+    /**
+     * Process online refund from Magento credit memo.
+     *
+     * @param InfoInterface $payment
+     * @param float $amount
+     * @return $this
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function refund(InfoInterface $payment, $amount)
+    {
+        $order = $payment->getOrder();
+        $reason = 'Magento Credit Memo Refund';
+
+        if (!$order || $payment->getMethod() !== self::PAYMENT_PINE_PG_CODE || !$order->getData('plural_order_id')) {
+            throw new \Magento\Framework\Exception\LocalizedException(
+                __('Pine Labs refund can be processed only for Pine Labs paid orders.')
+            );
+        }
+
+        $this->pineLogger->info(__LINE__ . ' | ' . __FUNCTION__ . ' Credit memo refund started', [
+            'order_id' => $order ? $order->getIncrementId() : null,
+            'entity_id' => $order ? $order->getEntityId() : null,
+            'amount' => $amount
+        ]);
+
+        $refundResponse = $this->helper->processRefund($order->getEntityId(), $amount, $reason, false, false);
+        $refundId = $refundResponse['refund_id'] ?? null;
+
+        if (!$refundId) {
+            throw new \Magento\Framework\Exception\LocalizedException(
+                __('Refund processed but refund ID was not returned by Pine Labs.')
+            );
+        }
+
+        $payment->setTransactionId($refundId);
+        $payment->setIsTransactionClosed(1);
+        $payment->setShouldCloseParentTransaction(false);
+
+        $this->pineLogger->info(__LINE__ . ' | ' . __FUNCTION__ . ' Credit memo refund completed', [
+            'order_id' => $order->getIncrementId(),
+            'refund_id' => $refundId,
+            'amount' => $amount
+        ]);
+
+        return $this;
     }
 
     public function getReturnUrl() {
