@@ -64,13 +64,6 @@ class Webhook extends Action implements CsrfAwareActionInterface
                 'body'    => $rawBody
             ]);
 
-            // 🔐 Signature verification
-            if (!$this->verifySignature($headers, $rawBody)) {
-                $this->_logger->error('Invalid PinePG webhook signature');
-                return $result->setHttpResponseCode(401)
-                    ->setData(['error' => 'Invalid signature']);
-            }
-
             $payload = json_decode($rawBody, true);
 
             if (
@@ -91,12 +84,26 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
             $pineOrderId = $payload['data']['order_id'];
 
+            // Load order first so the webhook signature can be verified with
+            // the correct store-scoped MerchantSecretKey.
             $order = $this->orderFactory
                 ->create()
                 ->load($pineOrderId, 'plural_order_id');
 
             if (!$order->getId()) {
                 throw new \Exception('Order not found for Pine order id: ' . $pineOrderId);
+            }
+
+            $storeId = (int) $order->getStoreId();
+
+            // 🔐 Signature verification with order store scope
+            if (!$this->verifySignature($headers, $rawBody, $storeId)) {
+                $this->_logger->error('Invalid PinePG webhook signature for store: ' . $storeId, [
+                    'order_id' => $pineOrderId,
+                    'entity_id' => $order->getId()
+                ]);
+                return $result->setHttpResponseCode(401)
+                    ->setData(['error' => 'Invalid signature']);
             }
 
             // 🛑 Idempotency
@@ -116,7 +123,8 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
             $this->_logger->info('Webhook processed successfully', [
                 'order_id' => $pineOrderId,
-                'entity_id' => $order->getId()
+                'entity_id' => $order->getId(),
+                'store_id' => $storeId
             ]);
 
             return $result->setData(['message' => 'Webhook processed successfully']);
@@ -131,7 +139,7 @@ class Webhook extends Action implements CsrfAwareActionInterface
 
     /* ================= SIGNATURE VERIFICATION ================= */
 
-    private function verifySignature(array $headers, string $rawBody): bool
+    private function verifySignature(array $headers, string $rawBody, int $storeId = null): bool
 {
     $headers = array_change_key_case($headers, CASE_LOWER);
 
@@ -143,24 +151,28 @@ class Webhook extends Action implements CsrfAwareActionInterface
         $this->_logger->error('Missing webhook signature headers', [
             'webhook_id' => $webhookId,
             'timestamp' => $timestamp,
-            'signature' => $signature
+            'signature' => $signature,
+            'store_id' => $storeId
         ]);
         return false;
     }
 
     // ⏱ Replay attack protection (5 minutes)
     if (abs(time() - (int)$timestamp) > 300) {
-        $this->_logger->error('Webhook timestamp expired', ['timestamp' => $timestamp]);
+        $this->_logger->error('Webhook timestamp expired', [
+            'timestamp' => $timestamp,
+            'store_id' => $storeId
+        ]);
         return false;
     }
 
     $paymentMethod = \Magento\Framework\App\ObjectManager::getInstance()
         ->get(\Pinelabs\PinePGGateway\Model\PinePGPaymentMethod::class);
 
-    $secret = $paymentMethod->getConfigData('MerchantSecretKey');
+    $secret = $paymentMethod->getConfigData('MerchantSecretKey', $storeId);
 
     if (!$secret) {
-        $this->_logger->error('Webhook secret missing in config');
+        $this->_logger->error('Webhook secret missing in config for store: ' . $storeId);
         return false;
     }
 
@@ -169,7 +181,7 @@ class Webhook extends Action implements CsrfAwareActionInterface
     $secretBytes = base64_decode($base64Secret);
     
     if ($secretBytes === false) {
-        $this->_logger->error('Failed to base64 decode the secret key');
+        $this->_logger->error('Failed to base64 decode the secret key for store: ' . $storeId);
         return false;
     }
 
@@ -184,11 +196,12 @@ class Webhook extends Action implements CsrfAwareActionInterface
     $receivedSignature = str_replace('v1,', '', $signature);
 
     if (!hash_equals($expectedSignature, $receivedSignature)) {
-        $this->_logger->error('Webhook signature mismatch', [
+        $this->_logger->error('Webhook signature mismatch for store: ' . $storeId, [
             'expected' => $expectedSignature,
             'received' => $receivedSignature,
             'signed_payload_length' => strlen($signedPayload),
-            'raw_body_length' => strlen($rawBody)
+            'raw_body_length' => strlen($rawBody),
+            'store_id' => $storeId
         ]);
         return false;
     }
