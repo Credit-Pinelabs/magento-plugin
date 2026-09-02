@@ -9,8 +9,8 @@
         </policy> 
          <policy id="form-action">
             <values>
-                <value id="pinelab-connect" type="host">uat.pinepg.in</value>
-                <value id="magento-connect" type="host">https://uat.pinepg.in/api/PG/V2</value>
+               <value id="pinelab-apacuat" type="host">ipg-apacuat.creditpluspinelabs.com</value>
+                <value id="pinelab-apacuat-connect" type="host">https://ipg-apacuat.creditpluspinelabs.com</value>
             </values> 
             <values>
                 <value id="pinelab-connect-prod" type="host">pinepg.in</value>

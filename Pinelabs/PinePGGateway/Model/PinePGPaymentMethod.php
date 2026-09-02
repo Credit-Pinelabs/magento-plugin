@@ -170,7 +170,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
     $env = $this->getConfigData('PayEnvironment');
     $url = ($env === 'LIVE')
         ? 'https://api.pluralpay.in/api/checkout/v1/orders'
-        : 'https://pluraluat.v2.pinepg.in/api/checkout/v1/orders';
+        : 'https://ipg-apacuat.creditpluspinelabs.com/api/checkout/v1/orders';
 
     $callback_url = $this->getCallbackUrl();
     $telephone = $order->getBillingAddress()->getTelephone();
@@ -388,7 +388,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 		// Define the URL based on the environment
 		$url = ($env === 'LIVE') 
 			? "https://api.pluralpay.in/api/pay/v1/orders/$orderId"
-			: "https://pluraluat.v2.pinepg.in/api/pay/v1/orders/$orderId";
+			: "https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/orders/$orderId"";
 	
 		// Set the request headers
 		$headers = [
@@ -439,7 +439,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         if ($env === 'LIVE') {
             $url = 'https://api.pluralpay.in/api/auth/v1/token';
         }else{
-			$url = 'https://pluraluat.v2.pinepg.in/api/auth/v1/token';
+			$url = 'https://ipg-apacuat.creditpluspinelabs.com/api/auth/v1/token';
 		}
 
 		  $body = json_encode([
