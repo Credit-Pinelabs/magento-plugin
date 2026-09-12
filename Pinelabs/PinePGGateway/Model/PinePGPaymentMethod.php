@@ -192,7 +192,8 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 
     $billingData = $formatAddress($billingAddressData);
     $shippingData = $formatAddress($shippingAddress);
-
+	
+    $currencyCode = $order->getOrderCurrencyCode();
     $grandTotal = intval(round(floatval($order->getBaseGrandTotal()) * 100));
     $shippingAmount = intval(round(floatval($order->getBaseShippingInclTax()) * 100));
     $totalDiscountAmount = abs(intval(round(floatval($order->getBaseDiscountAmount()) * 100)));
@@ -242,7 +243,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
                 'product_code' => $sku,
                 'product_amount' => [
                     'value' => $finalItemPricePaise,
-                    'currency' => 'INR',
+                    'currency' => $currencyCode,
                 ],
             ];
             $totalProductValue += $finalItemPricePaise;
@@ -255,10 +256,10 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
             'product_code' => 'shipping_charge',
             'product_amount' => [
                 'value' => $shippingAmount,
-                'currency' => 'INR',
+                'currency' => $currencyCode,
             ],
         ];
-        $this->pineLogger->info("Shipping added: ₹" . ($shippingAmount / 100));
+        $this->pineLogger->info("Shipping added: " . ($shippingAmount / 100));
         $totalProductValue += $shippingAmount;
     }
 
@@ -269,10 +270,10 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
             'product_code' => 'rounding_adjustment',
             'product_amount' => [
                 'value' => $roundingAdjustment,
-                'currency' => 'INR',
+                'currency' => $currencyCode,
             ],
         ];
-        $this->pineLogger->info("Adding rounding adjustment: ₹" . ($roundingAdjustment / 100));
+        $this->pineLogger->info("Adding rounding adjustment: " . ($roundingAdjustment / 100));
         $totalProductValue += $roundingAdjustment;
     }
 
@@ -287,7 +288,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         'merchant_order_reference' => $order->getIncrementId() . '_' . date("ymdHis"),
         'order_amount' => [
             'value' => $grandTotal,
-            'currency' => 'INR',
+            'currency' => $currencyCode,
         ],
         'callback_url' => $callback_url,
         'pre_auth' => false,
@@ -388,7 +389,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 		// Define the URL based on the environment
 		$url = ($env === 'LIVE') 
 			? "https://api.pluralpay.in/api/pay/v1/orders/$orderId"
-			: "https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/orders/$orderId"";
+			: "https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/orders/$orderId";
 	
 		// Set the request headers
 		$headers = [
