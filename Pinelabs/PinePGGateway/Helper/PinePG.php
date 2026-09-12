@@ -94,12 +94,13 @@ class PinePG extends AbstractHelper
         : 'https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/refunds/' . $pluralOrderId;
 
     $refundAmount = (int) round(((float) $amount) * 100);
+	$currencyCode = $order->getOrderCurrencyCode();
     $merchantOrderReference = uniqid('', true) . '_magento_' . $order->getIncrementId();
 
     // Prepare the body for the refund request
     $body = json_encode([
         'merchant_order_reference' => $merchantOrderReference,
-        'refund_amount' => ['value' => $refundAmount, 'currency' => 'INR'],
+        'refund_amount' => ['value' => $refundAmount, 'currency' => $currencyCode],
         'refund_reason' => $reason,
     ]);
 
