@@ -90,7 +90,7 @@ class PinePG extends AbstractHelper
     
    $env = $this->scopeConfig->getValue('payment/pinepgpaymentmethod/PayEnvironment', ScopeInterface::SCOPE_STORE);
   $url = ($env === 'LIVE')
-        ? 'https://api.pluralpay.in/api/pay/v1/refunds/' . $pluralOrderId
+        ? 'https://onlinepayments.pinelabs.sg/api/pay/v1/refunds/' . $pluralOrderId
         : 'https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/refunds/' . $pluralOrderId;
 
     $refundAmount = (int) round(((float) $amount) * 100);
@@ -208,7 +208,7 @@ class PinePG extends AbstractHelper
       {
           $env = $this->scopeConfig->getValue('payment/pinepgpaymentmethod/PayEnvironment', ScopeInterface::SCOPE_STORE);
           $url = ($env === 'LIVE')
-              ? 'https://api.pluralpay.in/api/auth/v1/token'
+              ? 'https://onlinepayments.pinelabs.sg/api/auth/v1/token'
               : 'https://ipg-apacuat.creditpluspinelabs.com/api/auth/v1/token';
 
           $body = json_encode([

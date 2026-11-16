@@ -169,7 +169,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 
     $env = $this->getConfigData('PayEnvironment');
     $url = ($env === 'LIVE')
-        ? 'https://api.pluralpay.in/api/checkout/v1/orders'
+        ? 'https://onlinepayments.pinelabs.sg/api/checkout/v1/orders'
         : 'https://ipg-apacuat.creditpluspinelabs.com/api/checkout/v1/orders';
 
     $callback_url = $this->getCallbackUrl();
@@ -367,9 +367,11 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 	  public function getCallbackUrl() {
 		// Check if running locally
 		if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
-			// Local environment
-			return 'http://localhost/magento/pinepg/standard/response';
-		}
+	  			// Local environment — detect port
+	  			$port = $_SERVER['SERVER_PORT'] ?? '80';
+	  			$base = $port == '80' ? 'http://localhost' : 'http://localhost:' . $port;
+	  			return $base . '/pinepg/standard/response';
+	  		}
 	
 		// Production or staging environment
 		$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
@@ -388,7 +390,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 	
 		// Define the URL based on the environment
 		$url = ($env === 'LIVE') 
-			? "https://api.pluralpay.in/api/pay/v1/orders/$orderId"
+			? "https://onlinepayments.pinelabs.sg/api/pay/v1/orders/$orderId"
 			: "https://ipg-apacuat.creditpluspinelabs.com/api/pay/v1/orders/$orderId";
 	
 		// Set the request headers
@@ -438,7 +440,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 
 		  $env = $this->getConfigData('PayEnvironment');
         if ($env === 'LIVE') {
-            $url = 'https://api.pluralpay.in/api/auth/v1/token';
+            $url = 'https://onlinepayments.pinelabs.sg/api/auth/v1/token';
         }else{
 			$url = 'https://ipg-apacuat.creditpluspinelabs.com/api/auth/v1/token';
 		}

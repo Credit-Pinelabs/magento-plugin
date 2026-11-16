@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: magento-demo-ingress
+  namespace: plural-uat
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/strip-path: "false"
+    konghq.com/protocols: https
+spec:
+  rules:
+    - host: magento-demo-ipg-apacuat.creditpluspinelabs.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: magento-demo-svc
+                port:
+                  number: 80

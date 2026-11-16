@@ -8,18 +8,14 @@
             </values>
         </policy> 
          <policy id="form-action">
-            <values>
-               <value id="pinelab-apacuat" type="host">ipg-apacuat.creditpluspinelabs.com</value>
-                <value id="pinelab-apacuat-connect" type="host">https://ipg-apacuat.creditpluspinelabs.com</value>
-            </values> 
-            <values>
-                <value id="pinelab-connect-prod" type="host">pinepg.in</value>
-                <value id="magento-connect-prod" type="host">https://pinepg.in/api/PG/V2</value>
-            </values>
-            <values>
-                <value id="pinelab-connect-prod" type="host">secure.pinepg.in</value>
-                <value id="magento-connect-prod" type="host">https://secure.pinepg.in/payment</value>
-            </values>
+                     <values>
+                        <value id="pinelab-apacuat" type="host">ipg-apacuat.creditpluspinelabs.com</value>
+                         <value id="pinelab-apacuat-connect" type="host">https://ipg-apacuat.creditpluspinelabs.com</value>
+                     </values> 
+                     <values>
+                         <value id="pinelab-prod-sg" type="host">onlinepayments.pinelabs.sg</value>
+                         <value id="pinelab-prod-sg-connect" type="host">https://onlinepayments.pinelabs.sg</value>
+                     </values>
         </policy>
     </policies>
 </csp_whitelist>
