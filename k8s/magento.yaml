@@ -1,0 +1,115 @@
+---
+# Magento 2.4 + PinePG Plugin
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magento-demo
+  namespace: plural-uat
+  labels:
+    app: magento-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magento-demo
+  template:
+    metadata:
+      labels:
+        app: magento-demo
+    spec:
+      initContainers:
+        - name: magento-setup
+          image: 154495061904.dkr.ecr.ap-south-1.amazonaws.com/plural-images/magento-pinepg:latest
+          command:
+            - bash
+            - -c
+            - |
+              echo "Waiting for MySQL..."
+              until mysqladmin ping -h magento-db-svc.plural-uat.svc.cluster.local --silent; do sleep 5; done
+              echo "Running Magento setup..."
+              php bin/magento setup:install \
+                --db-host=magento-db-svc.plural-uat.svc.cluster.local \
+                --db-name=magento \
+                --db-user=magento \
+                --db-password=$MAGENTO_DB_PASSWORD \
+                --admin-firstname=Admin \
+                --admin-lastname=User \
+                --admin-email=admin@pinelabs.com \
+                --admin-user=admin \
+                --admin-password=$MAGENTO_ADMIN_PASSWORD \
+                --base-url=https://magento-demo-ipg-apacuat.creditpluspinelabs.com \
+                --elasticsearch-host=magento-es-svc.plural-uat.svc.cluster.local \
+                --elasticsearch-port=9200 \
+                --use-rewrites=1 \
+                --search-engine=elasticsearch7
+              php bin/magento module:enable Pinelabs_PinePGGateway
+              php bin/magento setup:upgrade
+              php bin/magento setup:di:compile
+              php bin/magento setup:static-content:deploy -f
+              php bin/magento cache:flush
+              echo "Magento setup complete."
+          env:
+            - name: MAGENTO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: magento-demo-secrets
+                  key: mysql-password
+            - name: MAGENTO_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: magento-demo-secrets
+                  key: magento-admin-password
+      containers:
+        - name: magento
+          image: 154495061904.dkr.ecr.ap-south-1.amazonaws.com/plural-images/magento-pinepg:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: MAGENTO_HOST
+              value: magento-demo-ipg-apacuat.creditpluspinelabs.com
+            - name: MAGENTO_DATABASE_HOST
+              value: magento-db-svc.plural-uat.svc.cluster.local
+            - name: MAGENTO_DATABASE_PORT_NUMBER
+              value: "3306"
+            - name: MAGENTO_DATABASE_USER
+              value: magento
+            - name: MAGENTO_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: magento-demo-secrets
+                  key: mysql-password
+            - name: MAGENTO_DATABASE_NAME
+              value: magento
+            - name: ELASTICSEARCH_HOST
+              value: magento-es-svc.plural-uat.svc.cluster.local
+            - name: ELASTICSEARCH_PORT_NUMBER
+              value: "9200"
+          resources:
+            requests: { cpu: "1000m", memory: "2Gi" }
+            limits: { cpu: "2000m", memory: "4Gi" }
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 300
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 600
+            periodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: magento-demo-svc
+  namespace: plural-uat
+spec:
+  selector:
+    app: magento-demo
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

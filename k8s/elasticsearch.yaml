@@ -1,0 +1,50 @@
+---
+# Elasticsearch for Magento
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magento-es
+  namespace: plural-uat
+  labels:
+    app: magento-es
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magento-es
+  template:
+    metadata:
+      labels:
+        app: magento-es
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: xpack.security.enabled
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          resources:
+            requests: { cpu: "500m", memory: "1Gi" }
+            limits: { cpu: "1000m", memory: "2Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: magento-es-svc
+  namespace: plural-uat
+spec:
+  selector:
+    app: magento-es
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
