@@ -1,18 +1,28 @@
-# Magento 2.4 + PinePG Plugin Docker Image
-# Based on Bitnami Magento (available on Docker Hub)
-FROM bitnami/magento:2.4.7
+FROM php:8.2-apache
 
-# Switch to root to copy files
-USER root
+RUN apt-get update && apt-get install -y \
+    libicu-dev libpng-dev libjpeg-dev libxml2-dev libzip-dev libxslt-dev \
+    libfreetype6-dev unzip git curl cron default-mysql-client \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install intl gd pdo_mysql mysqli bcmath soap xsl zip opcache sockets \
+    && a2enmod rewrite \
+    && apt-get clean
 
-# Copy the PinePG Magento plugin into the Magento code directory
-COPY PinePGGateway/ /opt/bitnami/magento/app/code/Pinelabs/PinePGGateway/
+COPY auth.json /tmp/auth.json
 
-# Enable the module
-RUN cd /opt/bitnami/magento && \
-    php bin/magento module:enable Pinelabs_PinePGGateway && \
-    php bin/magento setup:upgrade && \
-    php bin/magento setup:di:compile && \
-    chown -R 1001:1001 /opt/bitnami/magento
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-USER 1001
+RUN cd /var/www && rm -rf html && \
+    COMPOSER_AUTH="$(cat /tmp/auth.json)" composer create-project \
+    --repository-url=https://repo.magento.com/ \
+    magento/project-community-edition html --no-interaction || \
+    (echo "Composer failed. Check auth.json credentials." && exit 1)
+
+COPY Pinelabs/ /var/www/html/app/code/Pinelabs/
+
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html \
+    && cd /var/www/html \
+    && php bin/magento module:enable Pinelabs_PinePGGateway || true \
+    && chown -R www-data:www-data /var/www/html
+
+WORKDIR /var/www/html
