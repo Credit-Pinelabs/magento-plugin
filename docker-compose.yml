@@ -1,0 +1,30 @@
+services:
+  magento:
+    image: magento/magento2devbox-web
+    ports:
+      - "8081:80"
+    volumes:
+      - ../magento-plugin/Pinelabs/PinePGGateway:/var/www/html/app/code/Pinelabs/PinePGGateway
+    depends_on:
+      magento-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  magento-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: magento
+      MYSQL_USER: magento
+      MYSQL_PASSWORD: magento123
+    volumes:
+      - magento_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  magento_db:
