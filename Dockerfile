@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y \
     libicu-dev libpng-dev libjpeg-dev libxml2-dev libzip-dev libxslt-dev \
@@ -15,7 +15,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN cd /var/www && rm -rf html && \
     COMPOSER_AUTH="$(cat /tmp/auth.json)" composer create-project \
     --repository-url=https://repo.magento.com/ \
-    magento/project-community-edition html --no-interaction || \
+    magento/project-community-edition:2.4.7-p3 html --no-interaction || \
     (echo "Composer failed. Check auth.json credentials." && exit 1)
 
 COPY Pinelabs/ /var/www/html/app/code/Pinelabs/
