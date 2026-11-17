@@ -13,10 +13,9 @@ COPY auth.json /tmp/auth.json
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 RUN cd /var/www && rm -rf html && \
-    COMPOSER_AUTH="$(cat /tmp/auth.json)" composer create-project \
+    COMPOSER_AUTH="$(cat /tmp/auth.json)" COMPOSER_POLICY_ADVISORIES_BLOCK=false composer create-project \
     --repository-url=https://repo.magento.com/ \
-    magento/project-community-edition:2.4.7-p3 html --no-interaction || \
-    (echo "Composer failed. Check auth.json credentials." && exit 1)
+    magento/project-community-edition:2.4.7-p3 html --no-interaction
 
 COPY Pinelabs/ /var/www/html/app/code/Pinelabs/
 
