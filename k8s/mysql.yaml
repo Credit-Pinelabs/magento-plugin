@@ -4,6 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: magento-db
+  namespace: plural-uat
   labels:
     app: magento-db
 spec:
@@ -57,6 +58,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: magento-db-pvc
+  namespace: plural-uat
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
@@ -67,6 +69,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: magento-db-svc
+  namespace: plural-uat
 spec:
   selector:
     app: magento-db
