@@ -19,6 +19,7 @@ RUN cd /var/www && rm -rf html && \
 
 # Pre-compile DI to fix Xhtml/CompilerInterface and other DI issues
 RUN cd /var/www/html && \
+    php bin/magento module:enable --all && \
     php -d memory_limit=-1 bin/magento setup:di:compile && \
     rm -rf var/cache/* var/page_cache/*
 
