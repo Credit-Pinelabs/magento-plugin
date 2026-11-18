@@ -19,10 +19,12 @@ RUN cd /var/www && rm -rf html && \
 
 COPY Pinelabs/ /var/www/html/app/code/Pinelabs/
 
-# Enable PinePG module and clear generated code — DB install will handle the rest
-RUN cd /var/www/html && \
-    php bin/magento module:enable Pinelabs_PinePGGateway || true && \
-    rm -rf generated/code/* generated/metadata/* var/cache/* && \
-    chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
+# Auto-install entrypoint — handles setup:install at runtime
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
 WORKDIR /var/www/html
+
+ENTRYPOINT ["/entrypoint.sh"]
