@@ -36,6 +36,12 @@
  4. Scroll down and locate Pinelabs Online.
  5. Fill your details Merchant Id, Merchant Secret, Merchant Access Code.
 
+Set Magento's **Secure Base URL** to the public HTTPS storefront URL for each
+deployed store view. PinePG uses the order's store view to build the browser
+return URL. The callback must accept a direct HTTPS POST; an HTTP-to-HTTPS
+302 can drop the payment result fields. This setting applies to newly created
+PinePG orders, not orders that already have a callback URL.
+
 # Support / Help
 
 

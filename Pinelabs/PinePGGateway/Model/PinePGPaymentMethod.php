@@ -5,7 +5,9 @@ namespace Pinelabs\PinePGGateway\Model;
 use Magento\Sales\Api\Data\TransactionInterface;
 use Magento\Payment\Model\InfoInterface;
 use Magento\Framework\Session\Config;
+use Magento\Framework\UrlInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Pinelabs\PinePGGateway\Logger\Logger;
 
 /**
@@ -28,6 +30,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 	protected  $logger;
 	protected  $pineLogger;
 	private $orderRepository;
+    private $storeManager;
 
     /**
      * 
@@ -57,7 +60,8 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 		\Magento\Directory\Model\Country $countryHelper,
 		OrderRepositoryInterface $orderRepository,
 		 Logger $pineLogger,
-		\Magento\Payment\Model\Method\Logger $paymentLogger
+		\Magento\Payment\Model\Method\Logger $paymentLogger,
+        StoreManagerInterface $storeManager
 
 		
     ) {
@@ -67,6 +71,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         $this->checkoutSession = $checkoutSession;
         $this->cart = $cart;
 		$this->orderRepository = $orderRepository;
+        $this->storeManager = $storeManager;
 		$this->_countryHelper = $countryHelper;
 
         parent::__construct(
@@ -172,7 +177,7 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
         ? 'https://onlinepayments.pinelabs.sg/api/checkout/v1/orders'
         : 'https://ipg-apacuat.creditpluspinelabs.com/api/checkout/v1/orders';
 
-    $callback_url = $this->getCallbackUrl();
+    $callback_url = $this->getCallbackUrl($order->getStoreId());
     $telephone = $order->getBillingAddress()->getTelephone();
     $onlyNumbers = preg_replace('/\D/', '', $telephone) ?: '9999999999';
 
@@ -364,21 +369,13 @@ class PinePGPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 
 
 
-	  public function getCallbackUrl() {
-		// Check if running locally
-		if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
-	  			// Local environment — detect port
-	  			$port = $_SERVER['SERVER_PORT'] ?? '80';
-	  			$base = $port == '80' ? 'http://localhost' : 'http://localhost:' . $port;
-	  			return $base . '/pinepg/standard/response';
-	  		}
-	
-		// Production or staging environment
-		$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-		$domain = $protocol . $_SERVER['HTTP_HOST'];
-		
-		return $domain . '/pinepg/standard/response';
-	}
+    public function getCallbackUrl($storeId = null): string
+    {
+        $store = $this->storeManager->getStore($storeId);
+        $baseUrl = $store->getBaseUrl(UrlInterface::URL_TYPE_LINK, true);
+
+        return rtrim($baseUrl, '/') . '/pinepg/standard/response';
+    }
 
 
 	public function callEnquiryApi($orderId) {
