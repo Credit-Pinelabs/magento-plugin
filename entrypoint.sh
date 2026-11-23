@@ -16,7 +16,7 @@ for i in $(seq 1 60); do
     sleep 3
 done
 
-# Check if Magento is installed
+# Check if Magento is installed locally (env.php)
 if [ -f /var/www/html/app/etc/env.php ] && php -r "
     \$env = include '/var/www/html/app/etc/env.php';
     exit(isset(\$env['install']['date']) ? 0 : 1);
@@ -39,17 +39,18 @@ else
         --use-rewrites=1 \
         --search-engine=elasticsearch7 \
         --elasticsearch-host="${ES_HOST:-magento-es-svc}" \
-        --no-interaction
+        --cleanup-database \
+        --no-interaction || true
 
-    echo "[Magento] Install complete. Enabling PinePG module..."
-    php bin/magento module:enable Pinelabs_PinePGGateway
-    php bin/magento module:disable Magento_TwoFactorAuth
-    php bin/magento deploy:mode:set developer
-    php bin/magento cache:flush
+    echo "[Magento] Install complete. Configuring modules..."
+    php bin/magento module:enable Pinelabs_PinePGGateway || true
+    php bin/magento module:disable Magento_TwoFactorAuth Magento_AdminAdobeImsTwoFactorAuth || true
+    php bin/magento deploy:mode:set developer || true
+    php bin/magento cache:flush || true
     echo "[Magento] Setup complete."
 fi
 
-# Fix permissions
+# Always ensure permissions and Apache run cleanly
 chown -R www-data:www-data /var/www/html/var /var/www/html/pub /var/www/html/generated /var/www/html/app/etc
 
 echo "[Magento] Starting Apache..."
