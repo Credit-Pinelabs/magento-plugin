@@ -43,6 +43,7 @@ else
 
     echo "[Magento] Install complete. Enabling PinePG module..."
     php bin/magento module:enable Pinelabs_PinePGGateway
+    php bin/magento module:disable Magento_TwoFactorAuth
     php bin/magento deploy:mode:set developer
     php bin/magento cache:flush
     echo "[Magento] Setup complete."
