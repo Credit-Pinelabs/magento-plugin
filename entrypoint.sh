@@ -39,7 +39,6 @@ else
         --use-rewrites=1 \
         --search-engine=elasticsearch7 \
         --elasticsearch-host="${ES_HOST:-magento-es-svc}" \
-        --cleanup-database \
         --no-interaction || true
 
     echo "[Magento] Install complete. Configuring modules..."
